@@ -39,34 +39,38 @@ export async function connectToWifi(dev: string, station: StationConfig, timeout
         rejectPromise = reject;
     });
 
-    const disconnect: () => Promise<void> = function () {
-        if (process.exitCode !== null) {
-            return fsPromises.rm(configFilePath);
-        }
-        let resolvePromise: () => void;
-        const promise = new Promise<void>(resolve => {
-            resolvePromise = resolve;
-        });
-        process.on("exit", () => {
-            resolvePromise();
-        });
-        process.kill("SIGINT");
-        return promise;
-    };
+    let resolveDisconnectPromise: () => void;
 
-    let processTimeout = false;
-
-    process.on("exit", errorCode => {
-        if (errorCode != 0) {
-            rejectPromise(new Error(`wpa_supplicant exited with ${errorCode}, timeout: ${processTimeout}`));
-            fsPromises.rm(configFilePath).catch(console.error);
-        }
+    const disconnectPromise = new Promise<void>(resolve => {
+        resolveDisconnectPromise = resolve;
     });
 
     let timeoutTimeout = setTimeout(() => {
         processTimeout = true;
         process.kill("SIGINT");
+    }, timeout);
+
+    let processTimeout = false;
+    let processExitedSuccessfully = false;
+
+    process.on("exit", errorCode => {
+        fsPromises.rm(configFilePath).catch(console.error);
+        if (processExitedSuccessfully) {
+            resolveDisconnectPromise();
+            return;
+        }
+        rejectPromise(new Error(`wpa_supplicant exited with ${errorCode}, timeout: ${processTimeout}`));
     });
+
+    const disconnect: () => Promise<void> = function () {
+        if (process.exitCode !== null) {
+            return Promise.resolve();
+        }
+        processExitedSuccessfully = true;
+        process.kill("SIGINT");
+        return disconnectPromise;
+    };
+
 
     process.stdout.on("data", (data: string) => {
         const strings = data.split("\n").map(item => item.trim()).map(item => item);
