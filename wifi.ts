@@ -72,11 +72,11 @@ export async function connectToWifi(dev: string, station: StationConfig, timeout
     };
 
     process.stdout.on("data", data => {
-        console.info(JSON.stringify(data) + " " + typeof data);
-        if (typeof data !== "string") {
+        if (!(data instanceof Buffer)) {
             return;
         }
-        const strings = data.split("\n").map(item => item.trim()).map(item => item);
+        const strings = data.toString("utf8").split("\n")
+            .map(item => item.trim()).map(item => item);
         for (const string of strings) {
             console.info(`wpa_supplicant log: ${string}`);
             if (!processTimeout) {
