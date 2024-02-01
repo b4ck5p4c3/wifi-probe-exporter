@@ -54,15 +54,33 @@ export async function connectToWifi(dev: string, station: StationConfig, timeout
         return promise;
     };
 
+    let processTimeout = false;
+
     process.on("exit", errorCode => {
         if (errorCode != 0) {
-            rejectPromise(new Error(`wpa_supplicant exited with ${errorCode}`));
+            rejectPromise(new Error(`wpa_supplicant exited with ${errorCode}, timeout: ${processTimeout}`));
             fsPromises.rm(configFilePath).catch(console.error);
         }
     });
 
-    process.stdout.on("data", data => {
-        console.info(JSON.stringify(data.toString()));
+    let timeoutTimeout = setTimeout(() => {
+        processTimeout = true;
+        process.kill("SIGINT");
+    });
+
+    process.stdout.on("data", (data: string) => {
+        const strings = data.split("\n").map(item => item.trim()).map(item => item);
+        for (const string of strings) {
+            console.info(`wpa_supplicant log: ${string}`);
+            if (!processTimeout) {
+                if (string.startsWith(`${dev}: CTRL-EVENT-CONNECTED - Connection to ${station.bssid.toLowerCase()} completed`)) {
+                    clearTimeout(timeoutTimeout);
+                    resolvePromise({
+                        disconnect
+                    });
+                }
+            }
+        }
     });
 
     return resultPromise;
