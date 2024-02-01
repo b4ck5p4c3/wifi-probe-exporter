@@ -24,11 +24,10 @@ export async function connectToWifi(dev: string, station: StationConfig, timeout
     const configFilePath = `/tmp/wpa_supplicant_config_${Math.random().toFixed(10).slice(2)}.conf`;
     await fsPromises.writeFile(configFilePath, configContents);
 
-    const command = `/usr/sbin/wpa_supplicant -i${dev} -c${configFilePath}`;
-
-    const process = child_process.spawn(command, {
-        stdio: "pipe"
-    });
+    const process = child_process.spawn("/usr/sbin/wpa_supplicant",
+        [`-i${dev}`, `-c${configFilePath}`], {
+            stdio: "pipe"
+        });
 
     let resolvePromise: (handle: WifiHandle) => void;
     let rejectPromise: (e: Error) => void;
