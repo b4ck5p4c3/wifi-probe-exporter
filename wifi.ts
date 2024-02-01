@@ -72,6 +72,7 @@ export async function connectToWifi(dev: string, station: StationConfig, timeout
     };
 
     process.stdout.on("data", data => {
+        console.info(JSON.stringify(data) + " " + typeof data);
         if (typeof data !== "string") {
             return;
         }
