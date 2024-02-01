@@ -71,8 +71,10 @@ export async function connectToWifi(dev: string, station: StationConfig, timeout
         return disconnectPromise;
     };
 
-
-    process.stdout.on("data", (data: string) => {
+    process.stdout.on("data", data => {
+        if (typeof data !== "string") {
+            return;
+        }
         const strings = data.split("\n").map(item => item.trim()).map(item => item);
         for (const string of strings) {
             console.info(`wpa_supplicant log: ${string}`);
