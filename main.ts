@@ -181,7 +181,9 @@ app.get('/metrics', (_, res) => {
     res.end(result);
 });
 
-app.listen(port);
+app.listen(port, () => {
+    console.info(`Started on port ${port}`);
+});
 
 runTests().catch(console.error);
 setInterval(() => runTests().catch(console.error), interval);
