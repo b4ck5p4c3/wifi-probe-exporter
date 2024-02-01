@@ -71,14 +71,14 @@ export async function connectToWifi(dev: string, station: StationConfig, timeout
         return disconnectPromise;
     };
 
-    process.stdout.on("data", data => {
+    function dataHandler(data: unknown): void {
         if (!(data instanceof Buffer)) {
             return;
         }
         const strings = data.toString("utf8").split("\n")
-            .map(item => item.trim()).map(item => item);
+            .map(item => item.trim()).filter(item => item);
         for (const string of strings) {
-            console.info(`wpa_supplicant log: ${string}`);
+            console.info(`wpa_supplicant log on ${station.bssid}: ${string}`);
             if (!processTimeout) {
                 if (string.startsWith(`${dev}: CTRL-EVENT-CONNECTED - Connection to ${station.bssid.toLowerCase()} completed`)) {
                     clearTimeout(timeoutTimeout);
@@ -88,7 +88,10 @@ export async function connectToWifi(dev: string, station: StationConfig, timeout
                 }
             }
         }
-    });
+    }
+
+    process.stdout.on("data", dataHandler);
+    process.stderr.on("data", dataHandler);
 
     return resultPromise;
 }
