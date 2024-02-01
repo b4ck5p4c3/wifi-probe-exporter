@@ -15,12 +15,14 @@ interface StationConfig {
 export async function connectToWifi(dev: string, station: StationConfig, timeout: number): Promise<WifiHandle> {
     let configContents = 'network={\n';
     if (station.ssid !== undefined) {
-        configContents += `  ssid=${station.ssid}\n`;
+        configContents += `  ssid=${JSON.stringify(station.ssid)}\n`;
     }
     configContents += `  bssid=${station.bssid}\n`;
     if (station.psk !== undefined) {
         configContents += `  psk=${JSON.stringify(station.psk)}\n`;
     }
+    configContents += "}\n";
+
     const configFilePath = `/tmp/wpa_supplicant_config_${Math.random().toFixed(10).slice(2)}.conf`;
     await fsPromises.writeFile(configFilePath, configContents);
 
@@ -49,17 +51,18 @@ export async function connectToWifi(dev: string, station: StationConfig, timeout
             resolvePromise();
         });
         process.kill("SIGINT");
-        return promise.then(() => fsPromises.rm(configFilePath));
+        return promise;
     };
 
     process.on("exit", errorCode => {
         if (errorCode != 0) {
             rejectPromise(new Error(`wpa_supplicant exited with ${errorCode}`));
+            fsPromises.rm(configFilePath).catch(console.error);
         }
     });
 
     process.stdout.on("data", data => {
-        console.info(data.toString());
+        console.info(JSON.stringify(data.toString()));
     });
 
     return resultPromise;
