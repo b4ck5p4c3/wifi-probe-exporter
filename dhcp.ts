@@ -2,7 +2,7 @@ import child_process from "child_process";
 
 export function startDhcp(dev: string, timeout: number): Promise<void> {
     const process = child_process.spawn("/usr/sbin/dhclient",
-        ["-v", dev], {
+        ["-v", "-1", "-d", dev], {
             stdio: "pipe"
         });
 
