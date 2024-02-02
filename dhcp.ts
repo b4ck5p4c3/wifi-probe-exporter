@@ -1,15 +1,19 @@
 import child_process from "child_process";
 
-export function startDhcp(dev: string, timeout: number): Promise<void> {
+interface DhcpHandle {
+    stop(): Promise<void>;
+}
+
+export function startDhcp(dev: string, timeout: number): Promise<DhcpHandle> {
     const process = child_process.spawn("/usr/sbin/dhclient",
         ["-v", "-1", "-d", dev], {
             stdio: "pipe"
         });
 
-    let resolvePromise: () => void;
+    let resolvePromise: (handle: DhcpHandle) => void;
     let rejectPromise: (e: Error) => void;
 
-    const resultPromise = new Promise<void>((resolve, reject) => {
+    const resultPromise = new Promise<DhcpHandle>((resolve, reject) => {
         resolvePromise = resolve;
         rejectPromise = reject;
     });
@@ -19,14 +23,31 @@ export function startDhcp(dev: string, timeout: number): Promise<void> {
         process.kill("SIGINT");
     }, timeout);
 
+    let resolveStopPromise: () => void;
+
+    const stopPromise = new Promise<void>(resolve => {
+        resolveStopPromise = resolve;
+    });
+
     let processTimeout = false;
+    let processExitedSuccessfully = false;
 
     process.on("exit", errorCode => {
-        if (errorCode === 0) {
+        if (processExitedSuccessfully) {
+            resolveStopPromise();
             return;
         }
         rejectPromise(new Error(`dhclient exited with ${errorCode}, timeout: ${processTimeout}`));
     });
+
+    const stop: () => Promise<void> = function () {
+        if (process.exitCode !== null) {
+            return Promise.resolve();
+        }
+        processExitedSuccessfully = true;
+        process.kill("SIGINT");
+        return stopPromise;
+    };
 
     function dataHandler(data: unknown): void {
         if (!(data instanceof Buffer)) {
@@ -39,7 +60,9 @@ export function startDhcp(dev: string, timeout: number): Promise<void> {
             if (!processTimeout) {
                 if (string.startsWith("bound to")) {
                     clearTimeout(timeoutTimeout);
-                    resolvePromise();
+                    resolvePromise({
+                        stop
+                    });
                 }
             }
         }

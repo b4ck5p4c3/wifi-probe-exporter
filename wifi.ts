@@ -3,7 +3,7 @@ import internal from "stream";
 import * as child_process from "child_process";
 
 interface WifiHandle {
-    disconnect: () => Promise<void>;
+    disconnect(): Promise<void>;
 }
 
 interface StationConfig {

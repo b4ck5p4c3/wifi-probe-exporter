@@ -81,7 +81,7 @@ async function runTest(station: StationConfig): Promise<void> {
 
         try {
             const dhcpStartTime = process.hrtime.bigint();
-            await startDhcp(config.interface, dhcpRetrievalTimeout);
+            const dhcpHandle = await startDhcp(config.interface, dhcpRetrievalTimeout);
             const dhcpRetrievalTime = convertTimeToSeconds(process.hrtime.bigint() - dhcpStartTime);
 
             try {
@@ -107,6 +107,8 @@ async function runTest(station: StationConfig): Promise<void> {
                     pingSucceeded: false,
                     pingRttTime: 0
                 }
+            } finally {
+                await dhcpHandle.stop();
             }
         } catch (e) {
             console.error(`Failed to start DHCP: ${e}`);
