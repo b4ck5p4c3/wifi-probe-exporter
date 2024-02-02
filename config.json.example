@@ -5,14 +5,14 @@
       "ssid": "SP4CE",
       "bssid": "02:EC:DA:81:94:7F",
       "psk": "hellokitty",
-      "pingHost": "10.0.3.1"
+      "pingHost": "10.0.0.1"
     },
     {
       "name": "SP4CE-5",
       "ssid": "SP4CE",
       "bssid": "02:EC:DA:82:94:7F",
       "psk": "hellokitty",
-      "pingHost": "10.0.3.1"
+      "pingHost": "10.0.0.1"
     }
   ],
   "interface": "wlan0"
