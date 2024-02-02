@@ -22,5 +22,5 @@ export async function pingHost(dev: string, host: string, timeout: number): Prom
             throw new Error('Unknown ping error');
         }
     }
-    return BigInt(Math.floor(times.reduce((p, v) => p + v, 0) * 1000 * 1000 / 4));
+    return BigInt(Math.floor(times.reduce((p, v) => p + v, 0) * 1000 * 1000 / times.length));
 }
