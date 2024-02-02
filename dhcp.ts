@@ -6,7 +6,7 @@ interface DhcpHandle {
 
 export function startDhcp(dev: string, timeout: number): Promise<DhcpHandle> {
     const process = child_process.spawn("/usr/sbin/dhclient",
-        ["-v", "-d", dev], {
+        ["-v", "-d", "-lf", "/dev/null", dev], {
             stdio: "pipe"
         });
 
